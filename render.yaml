@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: campuscloud
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOCAL_DEV
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true

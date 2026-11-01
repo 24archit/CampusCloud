@@ -1,0 +1,155 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options: [dev, staging, prod]
+
+env:
+  AWS_REGION: ap-south-1
+  STACK_NAME: campus-cloud-stack
+  NODE_VERSION: '20'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Run backend unit tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Run backend tests
+        run: cd backend && npm test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: backend/coverage/
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Deploy infrastructure and frontend (only on main branch)
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to AWS
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment || 'prod' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Python (for SAM CLI)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AWS SAM CLI
+        run: pip install aws-sam-cli
+
+      - name: Build SAM application
+        run: cd infrastructure && sam build --cached --parallel
+
+      - name: Deploy infrastructure
+        run: |
+          cd infrastructure
+          sam deploy \
+            --stack-name ${{ env.STACK_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --parameter-overrides Environment=${{ github.event.inputs.environment || 'prod' }} \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --resolve-s3 \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Get stack outputs
+        id: stack-outputs
+        run: |
+          OUTPUTS=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.STACK_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Stacks[0].Outputs' \
+            --output json)
+          echo "API_URL=$(echo $OUTPUTS | python3 -c \"import sys,json;o=json.load(sys.stdin);print(next(x['OutputValue'] for x in o if x['OutputKey']=='ApiGatewayUrl'))\")" >> $GITHUB_OUTPUT
+          echo "FRONTEND_BUCKET=$(echo $OUTPUTS | python3 -c \"import sys,json;o=json.load(sys.stdin);print(next(x['OutputValue'] for x in o if x['OutputKey']=='FrontendBucketName'))\")" >> $GITHUB_OUTPUT
+          echo "CF_DIST_ID=$(echo $OUTPUTS | python3 -c \"import sys,json;o=json.load(sys.stdin);print(next(x['OutputValue'] for x in o if x['OutputKey']=='CloudFrontDistributionId'))\")" >> $GITHUB_OUTPUT
+          echo "USER_POOL_ID=$(echo $OUTPUTS | python3 -c \"import sys,json;o=json.load(sys.stdin);print(next(x['OutputValue'] for x in o if x['OutputKey']=='UserPoolId'))\")" >> $GITHUB_OUTPUT
+          echo "CLIENT_ID=$(echo $OUTPUTS | python3 -c \"import sys,json;o=json.load(sys.stdin);print(next(x['OutputValue'] for x in o if x['OutputKey']=='UserPoolClientId'))\")" >> $GITHUB_OUTPUT
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          cat > .env.production << EOF
+          VITE_API_URL=${{ steps.stack-outputs.outputs.API_URL }}
+          VITE_COGNITO_USER_POOL_ID=${{ steps.stack-outputs.outputs.USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID=${{ steps.stack-outputs.outputs.CLIENT_ID }}
+          VITE_APP_NAME=Smart Campus Resource Management System
+          VITE_ENVIRONMENT=${{ github.event.inputs.environment || 'prod' }}
+          EOF
+          npm run build
+
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync frontend/dist/ s3://${{ steps.stack-outputs.outputs.FRONTEND_BUCKET }}/ \
+            --delete \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.stack-outputs.outputs.CF_DIST_ID }} \
+            --paths "/*"
+
+      - name: Post deployment summary
+        run: |
+          echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API URL | ${{ steps.stack-outputs.outputs.API_URL }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment || 'prod' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.AWS_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Stack | ${{ env.STACK_NAME }} |" >> $GITHUB_STEP_SUMMARY

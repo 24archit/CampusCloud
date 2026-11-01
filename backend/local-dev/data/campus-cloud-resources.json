@@ -1,0 +1,117 @@
+[
+  {
+    "resourceId": "res-001",
+    "title": "Cloud Computing Architecture & AWS Services Complete Notes",
+    "description": "Comprehensive study guide covering IaaS, PaaS, SaaS, AWS Lambda, API Gateway, DynamoDB, S3, and CloudFront.",
+    "subject": "Cloud Computing",
+    "category": "Notes",
+    "tags": [
+      "AWS",
+      "Serverless",
+      "DynamoDB",
+      "Cloud Architecture"
+    ],
+    "s3Key": "resources/student-001/res-001-cloud-computing-notes.pdf",
+    "fileName": "cloud-computing-notes.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 2450000,
+    "uploaderId": "student-001",
+    "uploaderName": "Alex Johnson",
+    "uploaderEmail": "alex@campuscloud.edu",
+    "downloadCount": 42,
+    "isDeleted": false,
+    "createdAt": "2026-11-01T06:19:18.990Z",
+    "updatedAt": "2026-11-01T06:19:18.990Z"
+  },
+  {
+    "resourceId": "res-002",
+    "title": "Distributed Systems & Microservices Lab Manual",
+    "description": "Lab experiments on RPC, message passing, consensus algorithms (Raft/Paxos), and Docker containers.",
+    "subject": "Distributed Systems",
+    "category": "Lab Manuals",
+    "tags": [
+      "Distributed Systems",
+      "Lab",
+      "Microservices"
+    ],
+    "s3Key": "resources/student-001/res-002-distributed-systems-lab.pdf",
+    "fileName": "distributed-systems-lab.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 3100000,
+    "uploaderId": "student-001",
+    "uploaderName": "Alex Johnson",
+    "uploaderEmail": "alex@campuscloud.edu",
+    "downloadCount": 19,
+    "isDeleted": false,
+    "createdAt": "2026-11-01T06:19:18.990Z",
+    "updatedAt": "2026-11-01T06:19:18.990Z"
+  },
+  {
+    "resourceId": "res-003",
+    "title": "Advanced Computer Networks - 2025 Mid-Sem & End-Sem Solved Papers",
+    "description": "Previous year question papers with model answers, covering TCP/IP, BGP routing, SDN, and Network Security.",
+    "subject": "Computer Networks",
+    "category": "Previous Year Papers",
+    "tags": [
+      "Computer Networks",
+      "PYQ",
+      "Exams",
+      "Routing"
+    ],
+    "s3Key": "resources/admin-001/res-003-computer-networks-pyq.pdf",
+    "fileName": "computer-networks-pyq.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 1850000,
+    "uploaderId": "admin-001",
+    "uploaderName": "Campus Administrator",
+    "uploaderEmail": "admin@campuscloud.edu",
+    "downloadCount": 67,
+    "isDeleted": false,
+    "createdAt": "2026-11-01T06:19:18.990Z",
+    "updatedAt": "2026-11-01T06:19:18.990Z"
+  },
+  {
+    "resourceId": "ff4a439d-1962-4971-bdf2-373f985a964f",
+    "title": "Cloud Computing Syllabus 2026",
+    "description": "Official syllabus and course outcomes",
+    "subject": "Cloud Computing",
+    "category": "Notes",
+    "tags": [
+      "Syllabus",
+      "Cloud"
+    ],
+    "s3Key": "resources/admin-001/ff4a439d-1962-4971-bdf2-373f985a964f-test-syllabus.pdf",
+    "fileName": "test-syllabus.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 10240,
+    "uploaderId": "admin-001",
+    "uploaderName": "Campus Administrator",
+    "uploaderEmail": "admin@campuscloud.edu",
+    "downloadCount": 0,
+    "createdAt": "2026-11-01T06:19:18.992Z",
+    "updatedAt": "2026-11-01T06:19:18.992Z",
+    "isDeleted": false
+  },
+  {
+    "resourceId": "2e05bea1-d60a-49c2-ae85-809f937746e8",
+    "title": "Cloud Computing Syllabus 2026",
+    "description": "Official syllabus and course outcomes",
+    "subject": "Cloud Computing",
+    "category": "Notes",
+    "tags": [
+      "Syllabus",
+      "Cloud"
+    ],
+    "s3Key": "resources/admin-001/2e05bea1-d60a-49c2-ae85-809f937746e8-test-syllabus.pdf",
+    "fileName": "test-syllabus.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 10240,
+    "uploaderId": "admin-001",
+    "uploaderName": "Campus Administrator",
+    "uploaderEmail": "admin@campuscloud.edu",
+    "downloadCount": 0,
+    "createdAt": "2026-11-01T06:19:41.821Z",
+    "updatedAt": "2026-11-01T06:19:41.821Z",
+    "isDeleted": false
+  }
+]

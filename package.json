@@ -1,0 +1,42 @@
+{
+  "name": "campus-cloud-root",
+  "version": "1.0.0",
+  "description": "Smart Campus Resource Management System — Monorepo root",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node backend/local-dev/server.js",
+    "start:local": "node dev.js",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:all": "npm run test:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "deploy": "cd infrastructure && sam build && sam deploy",
+    "cleanup": "cd infrastructure && pwsh ./cleanup.ps1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "keywords": [
+    "aws",
+    "serverless",
+    "campus",
+    "cloud-computing",
+    "react",
+    "lambda",
+    "dynamodb",
+    "s3",
+    "cognito"
+  ],
+  "author": "[STUDENT_1_NAME], [STUDENT_2_NAME], [STUDENT_3_NAME]",
+  "license": "MIT"
+}

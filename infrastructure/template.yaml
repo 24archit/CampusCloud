@@ -1,0 +1,647 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Smart Campus Resource Management System - Cloud Infrastructure
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, staging, prod]
+  FrontendURL:
+    Type: String
+    Default: '*'
+    Description: Frontend URL for CORS
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref UsersTable
+        RESOURCES_TABLE: !Ref ResourcesTable
+        SHARED_LINKS_TABLE: !Ref SharedLinksTable
+        S3_BUCKET: !Ref ResourcesBucket
+        COGNITO_USER_POOL_ID: !Ref UserPool
+        COGNITO_CLIENT_ID: !Ref UserPoolClient
+        FRONTEND_URL: !Ref FrontendURL
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+
+Resources:
+  # ==================== COGNITO ====================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub campus-cloud-users-${Environment}
+      AutoVerifiedAttributes: [email]
+      UsernameAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub campus-cloud-client-${Environment}
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 24
+      IdTokenValidity: 24
+      RefreshTokenValidity: 30
+
+  # ==================== DYNAMODB ====================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub campus-cloud-users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CampusCloud
+        - Key: Environment
+          Value: !Ref Environment
+
+  ResourcesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub campus-cloud-resources-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: resourceId
+          AttributeType: S
+        - AttributeName: uploaderId
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: resourceId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UploaderIndex
+          KeySchema:
+            - AttributeName: uploaderId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: CategoryIndex
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CampusCloud
+        - Key: Environment
+          Value: !Ref Environment
+
+  SharedLinksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub campus-cloud-shared-links-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: shareId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shareId
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: CampusCloud
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==================== S3 ====================
+  ResourcesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub campus-cloud-resources-${Environment}-${AWS::AccountId}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      ServerSideEncryptionConfiguration:
+        Rules:
+          - ApplyServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: Project
+          Value: CampusCloud
+        - Key: Environment
+          Value: !Ref Environment
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub campus-cloud-frontend-${Environment}-${AWS::AccountId}
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      Tags:
+        - Key: Project
+          Value: CampusCloud
+        - Key: Environment
+          Value: !Ref Environment
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+  # ==================== CLOUDFRONT ====================
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: FrontendS3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+        DefaultCacheBehavior:
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          TargetOriginId: FrontendS3Origin
+          Compress: true
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2and3
+        PriceClass: PriceClass_All
+        Tags:
+          - Key: Project
+            Value: CampusCloud
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub campus-cloud-oac-${Environment}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ==================== IAM ROLES ====================
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub campus-cloud-lambda-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CampusCloudLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !Sub ${UsersTable.Arn}/index/*
+                  - !GetAtt ResourcesTable.Arn
+                  - !Sub ${ResourcesTable.Arn}/index/*
+                  - !GetAtt SharedLinksTable.Arn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:HeadObject
+                Resource:
+                  - !Sub ${ResourcesBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ResourcesBucket.Arn
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:ListUsers
+                Resource:
+                  - !GetAtt UserPool.Arn
+
+  # ==================== LAMBDA FUNCTIONS ====================
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub campus-cloud-auth-${Environment}
+      CodeUri: ../backend/
+      Handler: src/handlers/auth.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        Register:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /auth/register
+            Method: POST
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /auth/login
+            Method: POST
+        GetProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /auth/profile
+            Method: GET
+        UpdateProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /auth/profile
+            Method: PUT
+
+  ResourcesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub campus-cloud-resources-${Environment}
+      CodeUri: ../backend/
+      Handler: src/handlers/resources.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/upload-url
+            Method: POST
+        CreateResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources
+            Method: POST
+        ListResources:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources
+            Method: GET
+        GetMyUploads:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/my-uploads
+            Method: GET
+        GetResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/{resourceId}
+            Method: GET
+        DownloadResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/{resourceId}/download
+            Method: GET
+        DeleteResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/{resourceId}
+            Method: DELETE
+        CreateShareLink:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /resources/{resourceId}/share
+            Method: POST
+
+  AdminFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub campus-cloud-admin-${Environment}
+      CodeUri: ../backend/
+      Handler: src/handlers/admin.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetStats:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /admin/stats
+            Method: GET
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /admin/users
+            Method: GET
+        GetAdminResources:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /admin/resources
+            Method: GET
+        AdminDeleteResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /admin/resources/{resourceId}
+            Method: DELETE
+        DeleteUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /admin/users/{userId}
+            Method: DELETE
+
+  SharedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub campus-cloud-shared-${Environment}
+      CodeUri: ../backend/
+      Handler: src/handlers/shared.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetSharedResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /shared/{shareId}
+            Method: GET
+
+  # ==================== API GATEWAY ====================
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub campus-cloud-api-${Environment}
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        AllowOrigin: "'*'"
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+
+  # ==================== CLOUDWATCH ====================
+  ApplicationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/campus-cloud-${Environment}
+      RetentionInDays: 30
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/campus-cloud-${Environment}
+      RetentionInDays: 14
+
+  # CloudWatch Dashboard
+  MonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub CampusCloud-${Environment}
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "Lambda Invocations",
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "campus-cloud-auth-${Environment}"],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "campus-cloud-resources-${Environment}"],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "campus-cloud-admin-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "Lambda Errors",
+                "metrics": [
+                  ["AWS/Lambda", "Errors", "FunctionName", "campus-cloud-auth-${Environment}"],
+                  ["AWS/Lambda", "Errors", "FunctionName", "campus-cloud-resources-${Environment}"],
+                  ["AWS/Lambda", "Errors", "FunctionName", "campus-cloud-admin-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "title": "Lambda Duration (ms)",
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "campus-cloud-auth-${Environment}"],
+                  ["AWS/Lambda", "Duration", "FunctionName", "campus-cloud-resources-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "title": "API Gateway Requests",
+                "metrics": [
+                  ["AWS/ApiGateway", "Count", "ApiName", "campus-cloud-api-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 12, "width": 12, "height": 6,
+              "properties": {
+                "title": "DynamoDB Read/Write Capacity",
+                "metrics": [
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "campus-cloud-resources-${Environment}"],
+                  ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", "campus-cloud-resources-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 12, "width": 12, "height": 6,
+              "properties": {
+                "title": "API Gateway 4XX/5XX Errors",
+                "metrics": [
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "campus-cloud-api-${Environment}"],
+                  ["AWS/ApiGateway", "5XXError", "ApiName", "campus-cloud-api-${Environment}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "view": "timeSeries"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiUrl
+
+  CloudFrontUrl:
+    Description: CloudFront distribution URL
+    Value: !Sub https://${CloudFrontDistribution.DomainName}
+    Export:
+      Name: !Sub ${AWS::StackName}-FrontendUrl
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID for cache invalidation
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub ${AWS::StackName}-CloudFrontId
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolId
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolClientId
+
+  ResourcesBucketName:
+    Description: S3 bucket for resources
+    Value: !Ref ResourcesBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourcesBucket
+
+  FrontendBucketName:
+    Description: S3 bucket for frontend hosting
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-FrontendBucket

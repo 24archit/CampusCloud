@@ -1,0 +1,26 @@
+[
+  {
+    "userId": "admin-001",
+    "name": "Campus Administrator",
+    "email": "admin@campuscloud.edu",
+    "passwordHash": "b79ba072a1d19f5773c9a6a5b4ed7b3f:33ce22eaf849adfbe7f21aee709cb63d5e0fa9b3d0c1bb98d4f0c6ea22e4fdd30c1281b974abcea50c091359a701449d7f9f5c8e5dd6f51a4664234d2a5d0de4",
+    "role": "admin",
+    "bio": "Lead System Administrator for CampusCloud Platform",
+    "uploadCount": 3,
+    "createdAt": "2026-11-01T06:19:18.889Z",
+    "updatedAt": "2026-11-01T06:19:18.889Z",
+    "lastLoginAt": "2026-11-01T06:19:41.808Z"
+  },
+  {
+    "userId": "student-001",
+    "name": "Alex Johnson",
+    "email": "alex@campuscloud.edu",
+    "passwordHash": "410625698971c8b333f203a77fda8bac:dbea26374e55ef472a170838d1bed943048995edc416b77ea16b5254eb0b3662f5e328d5b5676ae921d12a6e3e76397bc71ac68811f5e6cfaaf7fbfdfbefc966",
+    "role": "student",
+    "bio": "Computer Science & Engineering, 6th Semester",
+    "uploadCount": 3,
+    "createdAt": "2026-11-01T06:19:18.889Z",
+    "updatedAt": "2026-11-01T06:19:18.889Z",
+    "lastLoginAt": "2026-11-01T06:23:15.128Z"
+  }
+]

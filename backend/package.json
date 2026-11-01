@@ -1,0 +1,36 @@
+{
+  "name": "campus-cloud-backend",
+  "version": "1.0.0",
+  "description": "Smart Campus Resource Management System - Backend",
+  "main": "src/handlers/index.js",
+  "scripts": {
+    "start": "node local-dev/server.js",
+    "dev": "nodemon local-dev/server.js",
+    "test": "jest --coverage --forceExit",
+    "test:watch": "jest --watch"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ]
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.600.0",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}

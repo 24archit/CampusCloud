@@ -1,0 +1,35 @@
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "campus-cloud-stack"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "ap-south-1"
+s3_prefix = "campus-cloud"
+# parameter_overrides = "Environment=prod FrontendURL=*"
+
+[dev.deploy.parameters]
+stack_name = "campus-cloud-stack-dev"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+resolve_s3 = true
+region = "ap-south-1"
+s3_prefix = "campus-cloud-dev"
+parameter_overrides = "Environment=dev"
+
+[staging.deploy.parameters]
+stack_name = "campus-cloud-stack-staging"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "ap-south-1"
+s3_prefix = "campus-cloud-staging"
+parameter_overrides = "Environment=staging"
