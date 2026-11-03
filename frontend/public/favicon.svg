@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#4f46e5" />
+  <!-- Graduation Cap -->
+  <path d="M16 7L26 12L16 17L6 12L16 7Z" fill="#ffffff" />
+  <path d="M10.5 14.5V18.5C10.5 21 13 22.5 16 22.5C19 22.5 21.5 21 21.5 18.5V14.5" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" />
+  <path d="M23.5 13.5V19.5" stroke="#ffffff" stroke-width="1.25" stroke-linecap="round" />
+  <circle cx="23.5" cy="20" r="0.8" fill="#ffffff" />
+  <!-- Cloud Wave Base -->
+  <path d="M8 25.5C9.5 24 11 25.5 13 25.5C15 25.5 16 24 18 24C20 24 21 25.5 24 25.5" stroke="#a5b4fc" stroke-width="1.75" stroke-linecap="round" />
+</svg>
