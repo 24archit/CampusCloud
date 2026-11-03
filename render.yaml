@@ -13,3 +13,4 @@ services:
         value: "true"
       - key: JWT_SECRET
         generateValue: true
+

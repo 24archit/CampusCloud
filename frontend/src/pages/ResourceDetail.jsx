@@ -56,7 +56,7 @@ export default function ResourceDetail() {
     try {
       const res = await resourcesAPI.createShareLink(id);
       const data = res?.data || res;
-      const link = data?.shareLink || `${window.location.origin}/shared/${data?.shareId}`;
+      const link = `${window.location.origin}/shared/${data?.shareId || data?.resourceId}`;
       setShareLink(link);
       setShareOpen(true);
     } catch { toast.error('Failed to create share link'); }

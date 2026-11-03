@@ -10,16 +10,17 @@ const corsMiddleware = (req, res, next) => {
   ];
 
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  const requestHeaders = req.headers['access-control-request-headers'];
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type,Authorization,X-Amz-Date,X-Api-Key',
+    requestHeaders || 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,Accept,Origin',
   );
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 

@@ -415,7 +415,8 @@ const createShareLink = async (event) => {
       createdAt: now,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const origin = event.headers?.origin || event.headers?.Origin;
+    const frontendUrl = origin || process.env.FRONTEND_URL || 'http://localhost:5173';
     const shareLink = `${frontendUrl}/shared/${shareId}`;
 
     return response.success({ shareLink, shareId, expiresAt }, 201);

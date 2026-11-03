@@ -1,54 +1,61 @@
 # Dependencies
 node_modules/
+*/node_modules/
 .pnp
 .pnp.js
 
-# Environment Variables (NEVER commit real secrets)
+# Environment Variables (NEVER commit secrets or local envs)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-# Keep .env.example files
+.env.*
 !.env.example
+*.env
+*.env.*
 
 # Build outputs
 dist/
+*/dist/
 build/
-.next/
+*/build/
 out/
+.next/
 
-# AWS SAM build artifacts
-.aws-sam/
-packaged.yaml
-packaged-template.yaml
-
-# Deployment artifacts
-*.zip
-*.tar.gz
-deployment-packages/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
-# Runtime data
+# Local uploads & temporary runtime files
+backend/local-dev/uploads/
+uploads/
+*/uploads/
+tmp/
+temp/
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage & test reports
 coverage/
+*/coverage/
 *.lcov
 .nyc_output/
 lib-cov/
 
-# Editor directories and files
+# AWS SAM build & deployment packages
+.aws-sam/
+packaged.yaml
+packaged-template.yaml
+*.zip
+*.tar.gz
+deployment-packages/
+.aws/
+credentials.json
+aws-exports.js
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Editor & OS files
 .vscode/
 .idea/
 *.suo
@@ -57,8 +64,6 @@ lib-cov/
 *.sln
 *.sw?
 .history/
-
-# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -68,45 +73,15 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Optional npm cache directory
+# Caches
 .npm
-
-# Optional eslint cache
 .eslintcache
-
-# Optional stylelint cache
 .stylelintcache
-
-# Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
-
-# Optional REPL history
 .node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# TypeScript cache
 *.tsbuildinfo
-
-# Vite cache
 .vite/
-
-# Temporary folders
-tmp/
-temp/
-
-# AWS credentials (should NEVER be committed)
-.aws/credentials
-credentials.json
-aws-exports.js
-
-# Local file storage
-backend/local-dev/uploads/
-
+*/.vite/

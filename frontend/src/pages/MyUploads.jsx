@@ -48,7 +48,7 @@ export default function MyUploads() {
     try {
       const res = await resourcesAPI.createShareLink(id);
       const data = res?.data || res;
-      const link = data?.shareLink || `${window.location.origin}/shared/${data?.shareId}`;
+      const link = `${window.location.origin}/shared/${data?.shareId || data?.resourceId}`;
       setShareData({ link });
     } catch { toast.error('Failed to create share link'); }
   };
