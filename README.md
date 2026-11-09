@@ -1,443 +1,237 @@
-# 🎓 Smart Campus Resource Management System
+# 🎓 CampusCloud — Smart Campus Resource Management System
 
-![AWS SAM](https://img.shields.io/badge/AWS_SAM-Serverless-orange?logo=amazon-aws)
-![Node.js](https://img.shields.io/badge/Node.js-20.x-green?logo=node.js)
-![React](https://img.shields.io/badge/React-18-blue?logo=react)
-![DynamoDB](https://img.shields.io/badge/DynamoDB-NoSQL-blue?logo=amazon-dynamodb)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![Status](https://img.shields.io/badge/Status-Production-brightgreen)
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com)
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://render.com)
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-green?logo=node.js)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production-brightgreen)](#)
 
-> A fully serverless, cloud-native academic resource sharing platform built on AWS. Students and faculty can upload, discover, download, and share study materials — all secured with Cognito authentication and backed by scalable AWS services.
+> **CampusCloud** is an academic resource sharing and discovery platform designed for university students and faculty. The application provides centralized, cataloged, and secure access to lecture notes, past exam papers, assignments, and reference materials.
 
----
-
-## ✨ Features
-
-### 👨‍🎓 Student Features
-1. **📝 Register & Login** — Email-based authentication via Amazon Cognito
-2. **📤 Upload Resources** — Drag-and-drop file upload directly to S3 via presigned URLs
-3. **📚 Browse Resources** — Search and filter by subject, category, or keyword
-4. **⬇️ Download Files** — One-click secure downloads via time-limited presigned URLs
-5. **👤 Profile Management** — Edit profile info, view upload stats
-6. **📁 My Uploads** — View and manage your own uploaded resources
-7. **🗑️ Delete Own Uploads** — Remove resources you uploaded
-8. **🔗 Share Links** — Generate time-limited shareable links (no login required for recipient)
-9. **🏷️ Resource Tagging** — Tag resources by subject, category, and custom tags
-10. **📊 Dashboard Stats** — See total resources, your uploads, and download counts
-
-### 🛡️ Admin Features
-- **User Management** — View all users, delete accounts
-- **Resource Moderation** — Delete any resource across the platform
-- **Platform Statistics** — Full system analytics and usage metrics
+**Live Deployment:**
+- **Frontend Application:** Deployed on **Vercel**
+- **Backend API Service:** Deployed on **Render** (Node.js 20 Web Service)
+- **Alternative Cloud Target:** AWS Serverless (SAM template included for AWS Lambda, DynamoDB, S3, API Gateway)
 
 ---
 
-## 🏗️ Architecture
+## 📌 Problem Statement
+
+In academic institutions, students and faculty frequently exchange lecture notes, past exam papers, syllabus copies, and lab manuals across unstructured channels (WhatsApp groups, Telegram channels, and personal drive links). This approach suffers from:
+1. **Link Rot & File Loss:** Drive links frequently expire or have restricted permissions when students graduate.
+2. **Poor Discoverability:** Unindexed files cannot be searched systematically by Subject, Department, Semester, or Resource Type.
+3. **No Moderation:** Zero administrative controls or quality checks for inappropriate or duplicate content.
+4. **Bandwidth Inefficiencies:** Uploading large files through compute servers causes bottlenecks and high operating costs.
+
+**CampusCloud** solves these challenges by providing a dedicated, cloud-hosted academic portal with role-based access control, direct storage streaming, robust search, and ephemeral sharing.
+
+---
+
+## ✨ Key Features
+
+### 👨‍🎓 Student & Faculty Experience
+- **📝 User Authentication** — Secure email registration and login with JWT session management.
+- **📤 Direct File Upload** — Drag-and-drop file upload for PDFs, presentations, documents, and archives.
+- **📚 Search & Discovery** — Instant search debouncing with filters for Subject, Category (Notes, Question Papers, Lab Manuals), and Tags.
+- **⬇️ Secure Downloads** — Direct, authorized downloads of original academic materials.
+- **🔗 Ephemeral Sharing** — Generate 72-hour temporary sharing links accessible without requiring login.
+- **📁 My Uploads Manager** — Track personal uploads, view download counters, and delete owned materials.
+- **👤 Profile Management** — Customize user information and inspect personal storage metrics.
+
+### 🛡️ Administrative Console
+- **Platform Analytics** — Monitor total registered users, uploaded resources, cumulative downloads, and storage consumption.
+- **User Management** — View all registered accounts and perform account moderation.
+- **Content Moderation** — Review and remove outdated or non-compliant academic materials across the platform.
+
+---
+
+## 🏗️ System Architecture
+
+CampusCloud is architected as a decoupled, cloud-hosted web application:
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    AWS Cloud (ap-south-1)                 │
-│                                                          │
-│  ┌─────────┐    ┌──────────────┐    ┌────────────────┐  │
-│  │   S3    │    │ API Gateway  │    │   CloudFront   │  │
-│  │Frontend │◄───│  REST API    │───►│   Distribution │  │
-│  └─────────┘    └──────┬───────┘    └────────────────┘  │
-│                        │                                  │
-│                 ┌──────▼───────┐                         │
-│                 │   Lambda     │                         │
-│                 │  Functions   │                         │
-│                 └──────┬───────┘                         │
-│                        │                                  │
-│           ┌────────────┼────────────┐                    │
-│           ▼            ▼            ▼                    │
-│      ┌─────────┐ ┌──────────┐ ┌──────────┐             │
-│      │DynamoDB │ │    S3    │ │ Cognito  │             │
-│      │Metadata │ │  Files   │ │   Auth   │             │
-│      └─────────┘ └──────────┘ └──────────┘             │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────┐           HTTPS / REST API           ┌────────────────────────────────┐
+│         Vercel (Edge)           │ ───────────────────────────────────> │         Render (PaaS)          │
+│                                 │                                      │                                │
+│  - React 18 + Vite SPA          │ <─────────────────────────────────── │  - Node.js 20 Web Service      │
+│  - TailwindCSS Design System    │            JSON Responses            │  - REST Handler Adapters       │
+│  - Client Routing & UI State    │                                      │  - JWT Auth & CORS Middleware  │
+│  - Axios HTTP Interceptors      │                                      │  - JSON DB / DynamoDB Service  │
+└─────────────────────────────────┘                                      │  - Local Uploads / S3 Storage  │
+                                                                         └────────────────────────────────┘
+                                                                                         │
+                                         ┌───────────────────────────────────────────────┴────────┐
+                                         │ (Optional AWS Cloud Backing via template.yaml)         │
+                                         ▼                         ▼                              ▼
+                                  ┌─────────────┐           ┌──────────────┐              ┌───────────────┐
+                                  │  DynamoDB   │           │  Amazon S3   │              │ Amazon Cognito│
+                                  │  Metadata   │           │ Object Store │              │ Auth Service  │
+                                  └─────────────┘           └──────────────┘              └───────────────┘
 ```
 
-**Request Flow:**
-1. Browser loads React SPA from **CloudFront → S3** (HTTPS, global CDN)
-2. All API calls go to **API Gateway** (REST)
-3. API Gateway routes to appropriate **Lambda function** (Auth / Resources / Admin / Shared)
-4. Lambda reads/writes **DynamoDB** for metadata
-5. File uploads/downloads use **S3 Presigned URLs** (client-to-S3 direct, never through Lambda)
-6. All auth validated against **Amazon Cognito** JWT tokens
+For complete technical specifications, see [ARCHITECTURE.md](ARCHITECTURE.md) and [FRONTEND_ARCHITECTURE.md](docs/FRONTEND_ARCHITECTURE.md).
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology | Why |
-|---|---|---|
-| **Frontend** | React 18 + Vite | Fast HMR dev experience, SPA |
-| **Styling** | TailwindCSS | Utility-first, consistent design |
-| **HTTP Client** | Axios | Interceptors for auth token injection |
-| **Backend** | Node.js 20 (AWS Lambda) | Serverless, no infrastructure to manage |
-| **API Layer** | AWS API Gateway | Managed REST API with CORS, throttling |
-| **Authentication** | Amazon Cognito | Managed auth, JWT, email verification |
-| **Database** | Amazon DynamoDB | Serverless, auto-scaling NoSQL |
-| **File Storage** | Amazon S3 | Durable, infinitely scalable object storage |
-| **CDN** | Amazon CloudFront | Global edge caching, HTTPS |
-| **IaC** | AWS SAM | CloudFormation extension for serverless |
-| **Monitoring** | Amazon CloudWatch | Logs, metrics, dashboards |
-| **CI/CD** | GitHub Actions | Automated test → build → deploy |
+| Layer | Actual Deployment Technology | Optional / Cloud-Native Alternative | Purpose |
+|---|---|---|---|
+| **Frontend** | React 18 + Vite | Amazon S3 + CloudFront | Responsive Single Page Application (SPA) |
+| **Frontend Hosting** | **Vercel** | AWS CloudFront CDN | Global edge deployment with automatic SSL |
+| **Styling** | TailwindCSS 3.4 | — | Utility-first responsive styling and dark mode |
+| **Backend API** | Node.js 20 + Express Engine | AWS Lambda Functions | REST API handlers & business logic |
+| **Backend Hosting** | **Render** | AWS API Gateway | Managed web service runtime |
+| **Database** | Built-in JSON Database (`local-db.js`) | Amazon DynamoDB | Document store for users, resources, and shared links |
+| **File Storage** | Local Storage Engine | Amazon S3 Presigned URLs | Direct document storage and file retrieval |
+| **Authentication** | JSON Web Tokens (JWT) | Amazon Cognito | Stateless role-based authentication |
+| **IaC** | `render.yaml` & `vercel.json` | AWS SAM (`template.yaml`) | Declarative infrastructure as code |
 
 ---
 
-## 📋 Prerequisites
+## 🚀 Getting Started (Local Development)
 
-Before you begin, ensure you have:
+### 1. Prerequisites
+- **Node.js 20+** installed ([Download Node.js](https://nodejs.org/))
+- **npm 10+** (bundled with Node.js)
+- **Git**
 
-- **Node.js 20+** — [Download](https://nodejs.org/)
-- **AWS CLI v2** — [Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
-- **AWS SAM CLI** — `pip install aws-sam-cli`
-- **AWS Account** — [Free Tier](https://aws.amazon.com/free/) (all services used are Free Tier eligible)
-- **Git** — for version control
-
-Configure AWS credentials:
+### 2. Clone the Repository
 ```bash
-aws configure
-# AWS Access Key ID: <your-key>
-# AWS Secret Access Key: <your-secret>
-# Default region: ap-south-1
-# Default output format: json
+git clone https://github.com/24archit/CampusCloud.git
+cd CampusCloud
 ```
 
----
-
-## 🚀 Quick Start (Local Development)
-
-### 1. Clone the repository
+### 3. Install Dependencies
 ```bash
-git clone https://github.com/<your-org>/campus-cloud.git
-cd campus-cloud
-```
-
-### 2. Install all dependencies
-```bash
-# Install root workspace dev-dependencies
-npm install
-
-# Install frontend and backend dependencies
+# Install root dev tools, frontend packages, and backend packages
 npm run install:all
 ```
 
-### 3. Configure environment variables
+### 4. Configure Environment Variables
+- **Backend Configuration** (`backend/.env`):
+  ```env
+  NODE_ENV=development
+  LOCAL_DEV=true
+  PORT=3001
+  FRONTEND_URL=http://localhost:5173
+  JWT_SECRET=campus_cloud_local_secret_key_12345
+  ```
+- **Frontend Configuration** (`frontend/.env.local`):
+  ```env
+  VITE_API_URL=http://localhost:3001
+  VITE_APP_NAME=CampusCloud
+  VITE_ENVIRONMENT=development
+  ```
+*(For a comprehensive guide, see [ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md))*
 
-**Frontend** (`frontend/.env.local`):
-```env
-VITE_API_URL=http://localhost:3001
-VITE_COGNITO_USER_POOL_ID=ap-south-1_XXXXXXXXX
-VITE_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-VITE_APP_NAME=Smart Campus Resource Management System
-VITE_ENVIRONMENT=development
-```
-
-**Backend** (`backend/.env`):
-```env
-USERS_TABLE=campus-cloud-users-dev
-RESOURCES_TABLE=campus-cloud-resources-dev
-SHARED_LINKS_TABLE=campus-cloud-shared-links-dev
-S3_BUCKET=campus-cloud-resources-dev-<account-id>
-COGNITO_USER_POOL_ID=ap-south-1_XXXXXXXXX
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-FRONTEND_URL=http://localhost:5173
-AWS_REGION=ap-south-1
-```
-
-### 4. Start development servers
+### 5. Run the Application Locally
 ```bash
 # Start both frontend and backend concurrently
 npm run dev
-
-# Or individually:
-npm run dev:frontend   # http://localhost:5173
-npm run dev:backend    # http://localhost:3001
 ```
+- **Frontend:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:3001/api](http://localhost:3001/api)
+- **Health Check:** [http://localhost:3001/api/health](http://localhost:3001/api/health)
 
 ---
 
-## 🌩️ AWS Deployment
+## 🌩️ Deployment Guides
 
-### Option A: PowerShell (Windows — Recommended)
-```powershell
-cd infrastructure
-.\deploy.ps1 -Environment prod -Region ap-south-1 -StackName campus-cloud-stack
-```
+### Production Deployment (Actual)
+1. **Frontend on Vercel:**
+   - Configure root directory or `frontend/`.
+   - Set environment variable: `VITE_API_URL=https://<your-render-backend>.onrender.com`.
+   - Build command: `npm run build:frontend`. Output directory: `frontend/dist`.
+   - Route rewrites handled via `vercel.json`.
 
-### Option B: Bash (Linux/macOS)
-```bash
-cd infrastructure
-chmod +x deploy.sh
-./deploy.sh prod ap-south-1 campus-cloud-stack
-```
+2. **Backend on Render:**
+   - Deploy using the included `render.yaml` blueprint.
+   - Sets runtime to Node.js, command `npm start`, and environment variable `LOCAL_DEV=true`.
+   - Binds to `0.0.0.0` with health check at `/api/health`.
 
-### Option C: Manual Step-by-Step
-```bash
-# 1. Build the SAM application
-cd infrastructure
-sam build --cached --parallel
-
-# 2. Deploy infrastructure
-sam deploy --stack-name campus-cloud-stack \
-           --region ap-south-1 \
-           --parameter-overrides Environment=prod \
-           --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-           --resolve-s3
-
-# 3. Get outputs
-aws cloudformation describe-stacks \
-    --stack-name campus-cloud-stack \
-    --query 'Stacks[0].Outputs'
-
-# 4. Build frontend with API URL
-cd ../frontend
-echo "VITE_API_URL=<api-url-from-step-3>" > .env.production
-npm run build
-
-# 5. Deploy frontend to S3
-aws s3 sync dist/ s3://<frontend-bucket>/ --delete
-```
-
-### Verify Deployment
-```bash
-# Check stack status
-aws cloudformation describe-stacks --stack-name campus-cloud-stack \
-    --query 'Stacks[0].StackStatus'
-
-# Test API
-curl https://<api-id>.execute-api.ap-south-1.amazonaws.com/prod/resources
-```
+*(For complete step-by-step instructions, see [DEPLOYMENT.md](docs/DEPLOYMENT.md))*
 
 ---
 
-## 📁 Project Structure
+## 🔌 API Reference Overview
 
-```
-campus-cloud/
-├── 📂 frontend/                    # React + Vite SPA
-│   ├── src/
-│   │   ├── components/             # Reusable UI components
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── FileCard.jsx
-│   │   │   └── UploadModal.jsx
-│   │   ├── pages/                  # Route-level page components
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── RegisterPage.jsx
-│   │   │   ├── DashboardPage.jsx
-│   │   │   ├── BrowsePage.jsx
-│   │   │   ├── UploadPage.jsx
-│   │   │   ├── MyUploadsPage.jsx
-│   │   │   └── AdminPage.jsx
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx     # Global auth state
-│   │   ├── services/
-│   │   │   └── api.js              # Axios instance + API calls
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── public/
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── package.json
-│
-├── 📂 backend/                     # Node.js Lambda functions
-│   ├── src/
-│   │   ├── handlers/               # Lambda entry points
-│   │   │   ├── auth.js             # /auth/* routes
-│   │   │   ├── resources.js        # /resources/* routes
-│   │   │   ├── admin.js            # /admin/* routes
-│   │   │   └── shared.js           # /shared/* routes
-│   │   ├── middleware/
-│   │   │   └── auth.js             # JWT verification middleware
-│   │   ├── services/
-│   │   │   ├── cognito.js          # Cognito SDK wrapper
-│   │   │   ├── dynamodb.js         # DynamoDB SDK wrapper
-│   │   │   └── s3.js               # S3 SDK + presigned URLs
-│   │   ├── config/
-│   │   │   └── aws.js              # AWS SDK clients
-│   │   └── utils/
-│   │       └── response.js         # HTTP response helpers
-│   ├── tests/
-│   │   ├── auth.test.js
-│   │   ├── resources.test.js
-│   │   └── admin.test.js
-│   └── package.json
-│
-├── 📂 infrastructure/              # AWS SAM / CloudFormation
-│   ├── template.yaml               # Main SAM template
-│   ├── samconfig.toml              # SAM CLI configuration
-│   ├── deploy.ps1                  # Windows deployment script
-│   ├── deploy.sh                   # Linux/macOS deployment script
-│   └── cleanup.ps1                 # Resource cleanup script
-│
-├── 📂 docs/                        # Project documentation
-│   ├── project-report.md           # Full academic project report
-│   ├── presentation-outline.md     # Slide-by-slide presentation guide
-│   ├── video-script.md             # 10-minute demo script
-│   ├── viva-questions.md           # 50 viva Q&A
-│   └── team-responsibilities.md    # Team role breakdown
-│
-├── 📂 .github/
-│   └── workflows/
-│       └── deploy.yml              # GitHub Actions CI/CD
-│
-├── ARCHITECTURE.md                 # Detailed architecture document
-├── README.md                       # This file
-├── .gitignore
-└── package.json                    # Workspace root
-```
+All REST API endpoints are served under `/api` in local/Render environments:
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | No | Register a new user |
+| `POST` | `/api/auth/login` | No | Login and receive JWT tokens |
+| `GET` | `/api/auth/profile` | Yes | Get authenticated user profile |
+| `PUT` | `/api/auth/profile` | Yes | Update profile details |
+| `POST` | `/api/resources/upload-url` | Yes | Request direct upload URL & file key |
+| `POST` | `/api/resources` | Yes | Create resource metadata record |
+| `GET` | `/api/resources` | Yes | Browse and filter academic catalog |
+| `GET` | `/api/resources/my-uploads` | Yes | List resources uploaded by the user |
+| `GET` | `/api/resources/:id` | Yes | Get resource details and tags |
+| `GET` | `/api/resources/:id/download` | Yes | Get download link and increment stats |
+| `DELETE` | `/api/resources/:id` | Yes | Delete own resource |
+| `POST` | `/api/resources/:id/share` | Yes | Generate 72-hour ephemeral share link |
+| `GET` | `/api/shared/:shareId` | No | Public access to shared resources |
+| `GET` | `/api/admin/stats` | Yes (Admin) | Platform analytics and storage usage |
+| `GET` | `/api/admin/users` | Yes (Admin) | List registered users |
+| `GET` | `/api/admin/resources` | Yes (Admin) | List all resources across the campus |
+| `DELETE` | `/api/admin/resources/:id` | Yes (Admin) | Content moderation file deletion |
+| `DELETE` | `/api/admin/users/:id` | Yes (Admin) | Moderation user account deletion |
+
+*(Full request bodies and sample responses are documented in [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md))*
 
 ---
 
-## 🔌 API Reference
+## 🧪 Testing & Quality Assurance
 
-All endpoints are prefixed with: `https://<api-id>.execute-api.ap-south-1.amazonaws.com/prod`
+```bash
+# Run backend unit tests with Jest
+npm run test:backend
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/auth/register` | ❌ | Register new user |
-| `POST` | `/auth/login` | ❌ | Login, returns JWT tokens |
-| `GET` | `/auth/profile` | ✅ | Get current user profile |
-| `PUT` | `/auth/profile` | ✅ | Update user profile |
-| `POST` | `/resources/upload-url` | ✅ | Get S3 presigned upload URL |
-| `POST` | `/resources` | ✅ | Create resource record in DB |
-| `GET` | `/resources` | ✅ | Browse/search all resources |
-| `GET` | `/resources/my-uploads` | ✅ | List your uploaded resources |
-| `GET` | `/resources/{id}` | ✅ | Get resource metadata |
-| `GET` | `/resources/{id}/download` | ✅ | Get presigned download URL |
-| `DELETE` | `/resources/{id}` | ✅ | Delete own resource |
-| `POST` | `/resources/{id}/share` | ✅ | Create shareable link |
-| `GET` | `/shared/{shareId}` | ❌ | Access shared resource |
-| `GET` | `/admin/stats` | ✅ Admin | Platform statistics |
-| `GET` | `/admin/users` | ✅ Admin | List all users |
-| `GET` | `/admin/resources` | ✅ Admin | List all resources |
-| `DELETE` | `/admin/resources/{id}` | ✅ Admin | Delete any resource |
-| `DELETE` | `/admin/users/{id}` | ✅ Admin | Delete a user |
+# Run frontend linting
+npm run lint:frontend
 
-**Authentication Header:**
+# Verify frontend production build
+npm run build:frontend
 ```
-Authorization: Bearer <cognito-id-token>
-```
+
+*(For testing details and manual verification steps, see [TESTING_GUIDE.md](docs/TESTING_GUIDE.md))*
 
 ---
 
-## 🧪 Testing
+## 📚 Complete Project Documentation
 
-### Run Backend Unit Tests
-```bash
-cd backend
-npm test
-```
-
-### Run with Coverage
-```bash
-cd backend
-npm run test:coverage
-```
-
-### Test Results Summary
-```
-Test Suites: 3 passed, 3 total
-Tests:       21 passed, 21 total
-Coverage:    auth: 87% | resources: 82% | admin: 91%
-```
-
-### Manual API Testing with curl
-```bash
-# Register
-curl -X POST https://<api>/prod/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@college.edu","password":"Test@1234","name":"Test User"}'
-
-# Login
-curl -X POST https://<api>/prod/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@college.edu","password":"Test@1234"}'
-
-# Browse resources (with token)
-curl https://<api>/prod/resources \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-## 🔒 Security
-
-| Control | Implementation |
+| Document | Description |
 |---|---|
-| **Authentication** | Amazon Cognito — JWT ID tokens, refresh token rotation |
-| **Authorization** | Lambda checks `role` claim in JWT; admin endpoints restricted |
-| **File Storage** | S3 bucket is **fully private** — no public access. All access via presigned URLs |
-| **HTTPS Everywhere** | CloudFront enforces HTTPS redirect; API Gateway is HTTPS-only |
-| **IAM Least Privilege** | Lambda role has exact permissions needed — no wildcards on resources |
-| **No Secrets in Code** | All secrets via environment variables injected by SAM/CloudFormation |
-| **Encryption at Rest** | DynamoDB SSE enabled; S3 AES-256 server-side encryption |
-| **CORS** | API Gateway CORS locked to allowed origins |
-| **Input Validation** | All inputs validated in Lambda before DB/S3 operations |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | High-level system architecture and data flows |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel and Render deployment configurations |
+| [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Complete REST API endpoint reference |
+| [FRONTEND_ARCHITECTURE.md](docs/FRONTEND_ARCHITECTURE.md) | Frontend component hierarchy and routing |
+| [ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md) | Environment variable reference and security |
+| [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) | Unit testing, coverage, and manual verification |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Diagnostic solutions for common setup issues |
+| [project-report.md](docs/project-report.md) | Academic capstone project report |
+| [team-responsibilities.md](docs/team-responsibilities.md) | Group project contribution breakdown |
+| [presentation-slides.md](docs/presentation-slides.md) | Slide outline for project presentation |
+| [viva-questions.md](docs/viva-questions.md) | Technical viva preparation Q&A |
 
 ---
 
-## 📊 Monitoring
+## 👥 Group Project Team & Responsibilities
 
-The project includes a pre-built **CloudWatch Dashboard** (`CampusCloud-prod`) with:
+| Role | Responsibility Area | Key Deliverables |
+|---|---|---|
+| **Frontend Lead** | UI/UX & Client Architecture | React 18 SPA, Tailwind design system, client routing, Axios interceptors |
+| **Backend Lead** | API & Data Architecture | Express/Lambda REST handlers, JWT authentication, local & DynamoDB data layers |
+| **DevOps & Cloud Lead** | Deployment, CI/CD & Security | Vercel & Render hosting configs, AWS SAM template, documentation, CI/CD |
 
-- 📈 Lambda invocations per function (5-min intervals)
-- ❌ Lambda error rates
-- ⏱️ Lambda execution duration (p50/p95)
-- 🌐 API Gateway request counts and error rates
-- 🗄️ DynamoDB read/write capacity consumption
-
-**Access:** AWS Console → CloudWatch → Dashboards → `CampusCloud-prod`
-
-**Log Groups:**
-- `/aws/lambda/campus-cloud-prod` — all Lambda logs (30-day retention)
-- `/aws/apigateway/campus-cloud-prod` — API access logs (14-day retention)
-
----
-
-## 🧹 Cleanup
-
-To delete **all AWS resources** and stop incurring charges:
-
-```powershell
-# Windows
-cd infrastructure
-.\cleanup.ps1 -StackName campus-cloud-stack -Region ap-south-1
-```
-
-> ⚠️ **This action is irreversible.** All data in DynamoDB and S3 will be permanently deleted.
-
----
-
-## 👥 Team
-
-| Name | Roll No | Role |
-|------|---------|------|
-| [STUDENT_1_NAME] | [ROLL_1] | Frontend Lead — React, UI/UX |
-| [STUDENT_2_NAME] | [ROLL_2] | Backend Lead — Lambda, API, DynamoDB |
-| [STUDENT_3_NAME] | [ROLL_3] | DevOps/Infra Lead — SAM, CI/CD, Docs |
-
-**Under the guidance of:** [PROFESSOR_NAME]  
-**Department:** Computer Science and Engineering  
-**Institution:** [COLLEGE_NAME], [UNIVERSITY_NAME]  
-**Academic Year:** 2026-2027
+*(See [team-responsibilities.md](docs/team-responsibilities.md) for full individual breakdowns)*
 
 ---
 
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-<div align="center">
-
-**Built with ❤️ using AWS Serverless services**
-
-[Report Bug](https://github.com/<your-org>/campus-cloud/issues) · [Request Feature](https://github.com/<your-org>/campus-cloud/issues)
-
-</div>
