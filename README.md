@@ -1,7 +1,7 @@
 # 🎓 CampusCloud — Smart Campus Resource Management System
 
 [![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com)
-[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://render.com)
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://campuscloud-udrm.onrender.com)
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green?logo=node.js)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
@@ -12,7 +12,7 @@
 
 **Live Deployment:**
 - **Frontend Application:** Deployed on **Vercel**
-- **Backend API Service:** Deployed on **Render** (Node.js 20 Web Service)
+- **Backend API Service:** [`https://campuscloud-udrm.onrender.com`](https://campuscloud-udrm.onrender.com) (Node.js 20 Web Service on Render)
 - **Alternative Cloud Target:** AWS Serverless (SAM template included for AWS Lambda, DynamoDB, S3, API Gateway)
 
 ---
